@@ -156,16 +156,14 @@ function drawGhost(x, y, size, color, context = renderCtx) {
 
 
 function initRenderCanvas() {
-    lowW = Math.max(1, Math.floor(w / RENDER_SCALE)); // Asegurar al menos 1px
+    lowW = Math.max(1, Math.floor(w / RENDER_SCALE));
     lowH = Math.max(1, Math.floor(h / RENDER_SCALE));
 
-    if (!renderCanvas) {
-        renderCanvas = document.createElement('canvas');
-    }
-    renderCanvas.width = lowW;
-    renderCanvas.height = lowH;
+    if (!renderCanvas) renderCanvas = document.createElement('canvas');
+    renderCanvas.width = lowW; renderCanvas.height = lowH;
     renderCtx = renderCanvas.getContext('2d');
-    
+
+    // Asegurar que el propio renderCtx no intente suavizar
     renderCtx.imageSmoothingEnabled = false;
     renderCtx.mozImageSmoothingEnabled = false;
     renderCtx.webkitImageSmoothingEnabled = false;
@@ -371,16 +369,14 @@ class Shard {
 
 class PumpkinPlant {
     constructor(x, y) {
-        this.x = Math.floor(x); 
-        this.y = Math.floor(y);
-        this.initialSize = 0; 
-        this.finalSize = 6 + Math.floor(Math.random() * 5); 
+        this.x = Math.floor(x); // Posición X del borde izquierdo de la calabaza
+        this.y = Math.floor(y); // Posición Y de la BASE de la calabaza (donde toca el "suelo")
+        this.initialSize = 0;
+        this.finalSize = 5 + Math.floor(Math.random() * 4);
         this.currentSize = this.initialSize;
-        this.growthTime = 180 + Math.random() * 120; // Slower growth
-        this.tick = 0;
-        this.stemHeight = 0;
-        this.maxStemHeight = 3 + Math.random() * 2;
-        this.alpha = 0; // Para el fade in general
+        this.growthTime = 200 + Math.random() * 150;
+        this.tick = 0; this.stemHeight = 0; this.maxStemHeight = 2 + Math.random() * 2;
+        this.alpha = 0;
     }
     step(ctx = renderCtx) {
         this.tick++;
@@ -389,47 +385,67 @@ class PumpkinPlant {
             this.currentSize = growthProgress * this.finalSize;
             this.currentSize = Math.min(this.currentSize, this.finalSize);
             this.stemHeight = growthProgress * this.maxStemHeight;
-            this.alpha = Math.min(1, growthProgress * 1.5); // Fade in as it grows
-        } else {
-            this.alpha = 1;
-        }
-        ctx.globalAlpha = this.alpha; // Apply general alpha
-        if (this.stemHeight > 0) {
-            for (let i = 0; i < Math.floor(this.stemHeight); i++) {
-                fillRect(this.x + Math.floor(this.currentSize/2) -1 , this.y - i, 2, 1, options.colors.plantStem, ctx);
-            }
-        }
-        if (this.currentSize >= 2) {
-            const s = Math.floor(this.currentSize);
-            const pumpkinY = this.y - Math.floor(this.stemHeight) - s;
-            // Cuerpo calabaza
-            circle(this.x + s/2, pumpkinY + s/2, s/2, options.colors.pumpkinBody, ctx);
-            // Tallo arriba
-            fillRect(this.x + s/2 -1, pumpkinY -1, 2,1, options.colors.plantStem, ctx);
+            this.alpha = Math.min(1, growthProgress * 2);
+        } else { this.alpha = 1; }
 
-            if (s > 4) { // Cara
+        ctx.globalAlpha = Math.max(0, Math.min(1, this.alpha));
+
+        const currentStemHeight = Math.floor(this.stemHeight);
+        const pumpkinDiameter = Math.floor(this.currentSize);
+
+        // Posición Y de la parte SUPERIOR del tallo
+        const stemTopY = this.y - currentStemHeight;
+
+        if (currentStemHeight >= 1) {
+            // El tallo se dibuja desde su base (this.y) hacia arriba
+            // fillRect(x_centro_tallo, y_superior_tallo, ancho_tallo, altura_tallo)
+            fillRect(this.x + Math.floor(pumpkinDiameter / 2) - 1, stemTopY, 2, currentStemHeight, options.colors.plantStem, ctx);
+        }
+
+        if (pumpkinDiameter >= 2) {
+            // Posición Y de la parte SUPERIOR de la calabaza
+            const pumpkinTopY = stemTopY - pumpkinDiameter;
+            // Centro X de la calabaza, Centro Y de la calabaza
+            const pumpkinCenterX = this.x + pumpkinDiameter / 2;
+            const pumpkinCenterY = pumpkinTopY + pumpkinDiameter / 2;
+
+            circle(pumpkinCenterX, pumpkinCenterY, pumpkinDiameter / 2, options.colors.pumpkinBody, ctx);
+
+            // Pequeño tallo encima de la calabaza
+            if (pumpkinDiameter > 1) {
+                fillRect(this.x + pumpkinDiameter / 2 - 1, pumpkinTopY - 1, 2, 1, options.colors.plantStem, ctx);
+            }
+
+            if (pumpkinDiameter > 3) { // Cara
                 const eyeSize = 1;
-                fillRect(this.x + s * 0.25, pumpkinY + s * 0.3, eyeSize, eyeSize, options.colors.pumpkinFace, ctx); 
-                fillRect(this.x + s * 0.65, pumpkinY + s * 0.3, eyeSize, eyeSize, options.colors.pumpkinFace, ctx); 
-                fillRect(this.x + s * 0.3, pumpkinY + s * 0.65, s*0.4, eyeSize, options.colors.pumpkinFace, ctx);
+                const faceYOffset = pumpkinDiameter * 0.3; // Desde el centro de la calabaza
+                // Ojo izquierdo
+                fillRect(pumpkinCenterX - pumpkinDiameter * 0.2, pumpkinCenterY - faceYOffset, eyeSize, eyeSize, options.colors.pumpkinFace, ctx);
+                // Ojo derecho
+                fillRect(pumpkinCenterX + pumpkinDiameter * 0.1, pumpkinCenterY - faceYOffset, eyeSize, eyeSize, options.colors.pumpkinFace, ctx);
+                // Boca
+                fillRect(pumpkinCenterX - pumpkinDiameter * 0.15, pumpkinCenterY + pumpkinDiameter * 0.15, Math.max(1, pumpkinDiameter * 0.3), eyeSize, options.colors.pumpkinFace, ctx);
             }
         }
-        ctx.globalAlpha = 1; // Reset alpha
+        ctx.globalAlpha = 1;
     }
 }
 
 class YarnBall {
     constructor() {
-        this.radius = 3; 
+        this.radius = 2;
         this.x = lowW / 2;
-        // Ajuste para que this.y esté sobre el gato, si el gato existe
-        const catHeightEstimate = (new PixelCat().height); // Estimar altura del gato
-        this.y = lowH - this.radius - catHeightEstimate - 2; 
-        this.vx = (0.6 + Math.random() * 0.4) * (Math.random() < 0.5 ? 1 : -1);
+        // Asegurar que pixelCat esté definido antes de acceder a su altura
+        const catHeight = pixelCat ? pixelCat.height : 5; // Si pixelCat es undefined, default a 5
+        const catYPosition = pixelCat ? pixelCat.y : lowH - catHeight -1; // Y superior del gato
+        // Queremos que la bola esté encima de la cabeza del gato.
+        // this.y será el centro de la bola.
+        this.y = catYPosition - this.radius - 1; // 1 pixel de espacio sobre la cabeza (o donde esté el gato)
+
+        this.vx = (0.5 + Math.random() * 0.3) * (Math.random() < 0.5 ? 1 : -1);
         this.color = options.colors.yarnBall;
-        this.rotation = 0;
-        this.rotationSpeed = this.vx * 0.15;
-        this.tailPoints = Array(4).fill(null).map(() => ({x: this.x, y: this.y}));
+        this.rotation = 0; this.rotationSpeed = this.vx * 0.1;
+        this.tailPoints = Array(3).fill(null).map(() => ({x: this.x, y: this.y}));
     }
     step() {
         this.x += this.vx;
@@ -454,43 +470,58 @@ class YarnBall {
 
 class PixelCat {
     constructor() {
-        this.pixelArtSize = 1; 
-        this.bodyWidthUnits = 8; // Más pequeño
-        this.bodyHeightUnits = 5;
+        this.pixelArtSize = 1;
+        this.bodyWidthUnits = 6;
+        this.bodyHeightUnits = 4; // Alto total del sprite del gato
         this.width = this.bodyWidthUnits * this.pixelArtSize;
-        this.height = this.bodyHeightUnits * this.pixelArtSize;
+        this.height = this.bodyHeightUnits * this.pixelArtSize; // Altura total del sprite
         this.x = lowW / 2;
-        this.y = lowH - this.height - this.pixelArtSize; // En el suelo
-        this.speed = 0.5; 
+        // AJUSTE: Asegurar que la parte más baja del gato (patas) esté visiblemente dentro del canvas
+        // this.y será la coordenada SUPERIOR del sprite del gato.
+        // Si las patas están en la última fila del sprite (unidad this.bodyHeightUnits -1),
+        // entonces this.y + this.height debe ser <= lowH.
+        // Para estar seguro, this.y + this.height = lowH - 1 (o - this.pixelArtSize)
+        this.y = lowH - this.height - this.pixelArtSize; // Coloca la base del gato 1 pixel arriba del borde inferior
+        
+        this.speed = 0.4;
         this.color = options.colors.pixelCat;
-        this.frame = 0; this.animationTick = 0; this.animationSpeed = 12; // Aleteo más lento
+        this.frame = 0; this.animationTick = 0; this.animationSpeed = 15;
         this.direction = 1;
     }
     step(targetX) {
         this.animationTick++;
         if (this.animationTick % this.animationSpeed === 0) this.frame = (this.frame + 1) % 2;
-        if (targetX > this.x + this.width / 2 + 1) { this.x += this.speed; this.direction = 1; }
-        else if (targetX < this.x - this.width / 2 - 1) { this.x -= this.speed; this.direction = -1; }
-        this.x = Math.max(0, Math.min(lowW - this.width, this.x));
+        if (targetX > this.x + this.width / 2 ) { this.x += this.speed; this.direction = 1; }
+        else if (targetX < this.x - this.width / 2 ) { this.x -= this.speed; this.direction = -1; }
+        this.x = Math.max(0, Math.min(lowW - this.width, this.x)); // Asegurar que el sprite completo esté dentro
     }
     draw(ctx = renderCtx) {
         const s = this.pixelArtSize;
-        ctx.save(); ctx.translate(Math.floor(this.x), Math.floor(this.y));
+        ctx.save();
+        // Math.floor para la traslación principal para alinear con la rejilla de píxeles
+        ctx.translate(Math.floor(this.x), Math.floor(this.y));
         if (this.direction === -1) { ctx.scale(-1, 1); ctx.translate(-this.width, 0); }
-        // Cuerpo más simple
-        fillRect(1*s, 1*s, 6*s, 3*s, this.color, ctx); // Cuerpo principal
-        // Cabeza
-        fillRect(5*s, 0*s, 3*s, 3*s, this.color, ctx);
-        // Orejas
-        drawPixel(6*s, -1*s, this.color, s, ctx);
-        drawPixel(7*s, -1*s, this.color, s, ctx);
-        // Cola
-        fillRect(0*s, 0*s, s, 2*s, this.color, ctx);
-        // Patas
+
+        // Cuerpo 4x2 (unidades relativas al sprite)
+        // (x relativa, y relativa, ancho, alto)
+        fillRect(s, s, 4*s, 2*s, this.color, ctx); // Cuerpo principal
+        // Cabeza 2x2
+        fillRect(4*s, 0, 2*s, 2*s, this.color, ctx);
+        // Orejas 1x1 (encima de la cabeza)
+        drawPixel(4*s, -s, this.color, s, ctx); // Oreja izquierda
+        drawPixel(5*s, -s, this.color, s, ctx); // Oreja derecha (relativa al sprite)
+        // Cola 1x2 (desde el borde izquierdo del cuerpo)
+        fillRect(0, 0, s, 2*s, this.color, ctx);
+
+        // Patas (en la parte inferior del sprite, y relativa: y = 3*s)
+        // La altura del cuerpo es 4 unidades (0 a 3). Las patas estarían en la fila y=3*s
         if (this.frame === 0) {
-            fillRect(2*s, 4*s, s, s, this.color, ctx); fillRect(5*s, 4*s, s, s, this.color, ctx);
+            // Pata delantera (más a la izquierda), Pata trasera (más a la derecha)
+            drawPixel(2*s, 3*s, this.color, s, ctx); // Coordenada Y es 3*s desde la parte superior del sprite
+            drawPixel(4*s, 3*s, this.color, s, ctx);
         } else {
-            fillRect(3*s, 4*s, s, s, this.color, ctx); fillRect(4*s, 4*s, s, s, this.color, ctx);
+            drawPixel(s, 3*s, this.color, s, ctx);
+            drawPixel(3*s, 3*s, this.color, s, ctx);
         }
         ctx.restore();
     }
@@ -591,8 +622,8 @@ function setup() {
     }
     for (let i = 0; i < options.batCount; i++) bats.push(new Bat());
 
-    pixelCat = new PixelCat(); // Crear gato primero para que yarnBall pueda usar su altura
-    yarnBall = new YarnBall();
+    pixelCat = new PixelCat(); // Crear el gato PRIMERO
+    yarnBall = new YarnBall(); // Luego el ovillo, que puede depender de la altura del gato
     halloweenCountdown = new HalloweenCountdown();
     if(halloweenCountdown) halloweenCountdown.lastUpdateTime = performance.now();
 }
@@ -635,8 +666,12 @@ function loop() {
         pixelCat.step(yarnBall.x); pixelCat.draw(renderCtx);
     }
     
-    ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(renderCanvas, 0, 0, lowW, lowH, 0, 0, w, h);
+    renderCtx.strokeStyle = '#D91656';
+	renderCtx.lineWidth = 1;
+	renderCtx.strokeRect(0, 0, lowW, lowH); // Dibuja un borde rojo
+
+	ctx.imageSmoothingEnabled = false;
+	ctx.drawImage(renderCanvas, 0, 0, lowW, lowH, 0, 0, w, h)
 
     letters = letters.filter(letter => letter.phase !== 'done');
     if (letters.length === 0 && initialLetterCount > 0) {
