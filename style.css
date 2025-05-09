@@ -1,7 +1,7 @@
 /* Enhanced CSS for Mobile and Desktop */
 
 /* Google Font Import (for a more festive touch) */
-@import url('https://fonts.googleapis.com/css2?family=Dancing+Script&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
 /* Global Reset and Box Sizing */
 html {
@@ -16,6 +16,7 @@ html {
 }
 
 body {
+	font-family: 'Press Start 2P', monospace; /* Ayuda al navegador a cargarla */
     background-color: #111;
     color: #fff; /* Color de texto por defecto si hubiera alguno fuera del canvas */
     font-family: sans-serif; /* Un fallback de fuente genérico */
@@ -39,12 +40,17 @@ body {
 }
 
 canvas {
-    display: block; /* Elimina espacio extra debajo del canvas */
-    width: 100%;    /* El JS lo manejará, pero es una buena práctica por si acaso */
-    height: 100%;   /* El JS lo manejará */
-    touch-action: none; /* Previene acciones táctiles por defecto del navegador en el canvas (ej. scroll, zoom) 
-                           si la animación fuera interactiva. Para una visualización pasiva, es menos crítico. */
+    display: block;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+    background-color: #080300; /* Color de fondo mientras carga JS, igual al del renderCanvas */
+    /* Opcional: filtro para un look más CRT/retro */
+    filter: brightness(1.1) contrast(1.1) saturate(1.2);
 }
+
+
+
 
 /* Las clases .letter y .wobble-animation no son usadas por el JS para el texto principal del canvas,
    pero se mantienen por si se usan para otros elementos HTML. */
