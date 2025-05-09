@@ -1,0 +1,55 @@
+/* Enhanced CSS */
+
+/* Google Font Import (for a more festive touch) */
+@import url('https://fonts.googleapis.com/css2?family=Dancing+Script&display=swap');
+
+body {
+    background-color: #111;
+    overflow: hidden;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    color: #fff; /* Default text color for any non-canvas text */
+}
+
+canvas {
+    display: block;
+}
+
+/* Example: Text Styling (not directly used by canvas text, but kept for potential use) */
+.letter {
+    font-family: 'Dancing Script', cursive;
+    font-size: 30px;
+    color: #ff4081;
+    text-shadow: 2px 2px 4px #000000;
+}
+
+/* Example: Keyframe Animation (not directly used, but kept for potential use) */
+@keyframes wobble {
+    0%,
+    100% {
+        transform: rotate(0deg);
+    }
+
+    10% {
+        transform: rotate(-1.5deg);
+    }
+
+    30% {
+        transform: rotate(1.5deg);
+    }
+
+    60% {
+        transform: rotate(-0.75deg);
+    }
+
+    80% {
+        transform: rotate(0.75deg);
+    }
+}
+
+.wobble-animation {
+    animation: wobble 2s infinite;
+}
